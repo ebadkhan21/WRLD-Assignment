@@ -21,11 +21,34 @@ public class EnemyPos
     }
 }
 
+
+[System.Serializable]
+public class GroundEnemyPos
+{
+    public double Latitude;
+    public double Longitude;
+    public double Elevation;
+
+    public LatLongAltitude latLong => LatLongAltitude.FromDegrees(Latitude, Longitude, Elevation);
+    public GameObject EnemyMade = null;
+
+    public GroundEnemyPos(double latitude = 37.784468, double longitude = -122.401268, double elevation = 10.0)
+    {
+        Latitude = latitude;
+        Longitude = longitude;
+        Elevation = elevation;
+    }
+}
+
+
+
 public class EnemyMaker : MonoBehaviour
 {
     [SerializeField] Shooter shooter = null;
     [SerializeField] GeographicTransform Prefab = null;
+    [SerializeField] GameObject enemyPrefabGround;
     [SerializeField] List<EnemyPos> EnemiesToMake = new List<EnemyPos>();
+    [SerializeField] List<GroundEnemyPos> GroundEnemiesToMake = new List<GroundEnemyPos>();
 
     private async void Start()
     {
@@ -33,6 +56,10 @@ public class EnemyMaker : MonoBehaviour
         for (int i = 0; i < EnemiesToMake.Count; i++)
         {
             MakeEnemy(i);
+        }
+        for (int i = 0; i < GroundEnemiesToMake.Count; i++)
+        {
+            MakeEnemyOnGround(i);
         }
         StartCoroutine(shooter.CustomUpdate());
     }
@@ -52,6 +79,16 @@ public class EnemyMaker : MonoBehaviour
             if (EnemiesToMake[index].EnemyMade.TryGetComponent<Enemy>(out Enemy enemy))
                 shooter.AddEnemy(enemy);
         }
+    }
+
+    private void MakeEnemyOnGround(int index)
+    {
+        var position = Api.Instance.SpacesApi.GeographicToWorldPoint(GroundEnemiesToMake[index].latLong);
+        GroundEnemiesToMake[index].EnemyMade = Instantiate(enemyPrefabGround);
+        GroundEnemiesToMake[index].EnemyMade.gameObject.name = $"Enemy_{index}";
+        GroundEnemiesToMake[index].EnemyMade.transform.localPosition = position;
+        if (GroundEnemiesToMake[index].EnemyMade.TryGetComponent<Enemy>(out Enemy enemy))
+            shooter.AddEnemy(enemy);
     }
 
 }
